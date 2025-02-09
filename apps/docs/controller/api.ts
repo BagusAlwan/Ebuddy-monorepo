@@ -3,9 +3,16 @@ import {
   fetchUserData,
   updateUserData,
   fetchAllUsers,
+  fetchRankedUsers,
+  getUserCollection,
 } from "../repository/userCollection";
 import { User } from "../entities/user";
 import { UserResponse } from "../entities/userResponse.dto";
+import { DocumentSnapshot, DocumentData } from "firebase-admin/firestore";
+
+interface RankedUserResponse extends UserResponse {
+  score: number;
+}
 
 const toUserResponse = (user: User): UserResponse => {
   return {
@@ -17,6 +24,10 @@ const toUserResponse = (user: User): UserResponse => {
     gender: user.gender,
     interests: user.interests,
     friends: user.friends,
+    totalAverageWeightRatings: user.totalAverageWeightRatings,
+    numberOfRents: user.numberOfRents,
+    recentlyActive: user.recentlyActive,
+    potentialScore: user.potentialScore,
   };
 };
 
@@ -65,5 +76,59 @@ export const getAllUsers = async (): Promise<UserResponse[]> => {
   } catch (error) {
     console.error("Error getting all users:", error);
     return [];
+  }
+};
+
+const toRankedUserResponse = (
+  user: User & { score: number }
+): RankedUserResponse => {
+  return {
+    ...toUserResponse(user),
+    score: user.score,
+  };
+};
+
+export const getRankedUsers = async (
+  req: Request
+): Promise<{
+  success: boolean;
+  data?: {
+    users: RankedUserResponse[];
+    lastDoc: string | null;
+  };
+  message?: string;
+}> => {
+  try {
+    const limit = Number(req.query.limit) || 10;
+    const lastDocId = req.query.lastDocId as string | undefined;
+    const userCollection = getUserCollection();
+
+    let lastDocRef: DocumentSnapshot<DocumentData> | undefined;
+    if (lastDocId) {
+      const docSnapshot = await userCollection.doc(lastDocId).get();
+      if (!docSnapshot.exists) {
+        return {
+          success: false,
+          message: "Invalid lastDocId provided",
+        };
+      }
+      lastDocRef = docSnapshot;
+    }
+
+    const { users, lastDoc } = await fetchRankedUsers(lastDocRef, limit);
+
+    return {
+      success: true,
+      data: {
+        users: users.map(toRankedUserResponse),
+        lastDoc: lastDoc?.id || null,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching ranked users:", error);
+    return {
+      success: false,
+      message: "Failed to fetch ranked users",
+    };
   }
 };

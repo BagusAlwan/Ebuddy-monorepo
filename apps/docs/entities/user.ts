@@ -7,4 +7,8 @@ export interface User {
   gender: string;
   interests: string[];
   friends: User[]; //for list of friends
+  totalAverageWeightRatings: number;
+  numberOfRents: number;
+  recentlyActive: number;
+  potentialScore?: number;
 }

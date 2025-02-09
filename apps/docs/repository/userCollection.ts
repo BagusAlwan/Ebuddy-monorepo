@@ -1,7 +1,10 @@
 import { db } from "../config/firebaseConfig";
 import { User } from "../entities/user";
+import { DocumentSnapshot, DocumentData } from "firebase-admin/firestore";
 
 const userCollection = db.collection("USERS");
+
+export const getUserCollection = () => userCollection;
 
 export const fetchUserData = async (userId: string): Promise<User | null> => {
   try {
@@ -41,4 +44,65 @@ export const fetchAllUsers = async (): Promise<User[]> => {
     console.error("error fetching all users:", error);
     return [];
   }
+};
+
+//Part 4 (Bonus)
+interface RankedUser extends User {
+  score: number;
+}
+
+interface PaginatedRankedUsers {
+  users: RankedUser[];
+  lastDoc: DocumentSnapshot<DocumentData> | null;
+}
+
+export const fetchRankedUsers = async (
+  lastDoc?: DocumentSnapshot<DocumentData>,
+  limit: number = 10
+): Promise<PaginatedRankedUsers> => {
+  try {
+    // Make sure we're ordering by score in descending order
+    let query = userCollection
+      .orderBy("totalAverageWeightRatings", "desc")
+      .orderBy("numberOfRents", "desc")
+      .orderBy("recentlyActive", "desc");
+
+    if (lastDoc) {
+      query = query.startAfter(lastDoc);
+    }
+
+    const snapshot = await query.limit(limit).get();
+    const users: RankedUser[] = [];
+
+    snapshot.forEach((doc) => {
+      const userData = doc.data() as User;
+      users.push({
+        ...userData,
+        id: doc.id,
+        score: calculateUserScore(userData),
+      });
+    });
+
+    // Sort the results after fetching to ensure correct order
+    users.sort((a, b) => b.score - a.score);
+
+    return {
+      users,
+      lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
+    };
+  } catch (error) {
+    console.error("Error fetching ranked users:", error);
+    return {
+      users: [],
+      lastDoc: null,
+    };
+  }
+};
+
+const calculateUserScore = (user: User): number => {
+  return (
+    user.totalAverageWeightRatings * 100 +
+    user.numberOfRents * 10 +
+    user.recentlyActive / 1e7
+  );
 };

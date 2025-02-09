@@ -1,5 +1,10 @@
 import express from "express";
-import { fetchUser, updateUser, getAllUsers } from "../controller/api";
+import {
+  fetchUser,
+  updateUser,
+  getAllUsers,
+  getRankedUsers,
+} from "../controller/api";
 import authMiddleware from "../middleware/authMiddleware";
 import { responseHandler } from "../middleware/responseHandler";
 
@@ -16,5 +21,6 @@ router.put(
   authMiddleware,
   responseHandler(updateUser)
 );
+router.get("/get-ranked-users", responseHandler(getRankedUsers));
 
 export default router;
