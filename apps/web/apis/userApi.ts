@@ -53,3 +53,22 @@ export const updateUserData = async (
   );
   return response.data;
 };
+
+interface RankedUserResponse extends UserData {
+  score: number;
+}
+
+export const fetchRankedUsers = async (): Promise<{
+  data: {
+    users: RankedUserResponse[];
+    lastDoc: string | null;
+  };
+}> => {
+  const response = await api.get<{
+    data: {
+      users: RankedUserResponse[];
+      lastDoc: string | null;
+    };
+  }>(`/api/get-ranked-users`);
+  return response.data;
+};

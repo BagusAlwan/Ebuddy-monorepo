@@ -5,6 +5,7 @@ import FetchAllUsers from "@/components/fetchAllUsers";
 import FetchUserData from "@/components/fetchUserData";
 import UpdateUserForm from "@/components/updateUserForm";
 import LogoutButton from "@/components/logoutButton";
+import UserRanks from "@/components/userRanks";
 
 const MainPage = () => {
   return (
@@ -23,6 +24,7 @@ const MainPage = () => {
       <FetchAllUsers />
       <FetchUserData />
       <UpdateUserForm />
+      <UserRanks/>
       <LogoutButton />
       </Box>
     </Box>

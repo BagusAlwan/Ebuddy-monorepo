@@ -47,6 +47,11 @@ export const fetchAllUsers = async (): Promise<User[]> => {
 };
 
 //Part 4 (Bonus)
+/* We use the calculateUserScore function to calculate the score of each user.
+Score=(totalAverageWeightRatings×100)+(numberOfRents×10)+(recentlyActive/1e7)
+reason for using 1e7 is because it is epoch time in seconds so we divide by 10^7 to normalize it
+then we sort the users by their score in descending order (dont forget to index in the firebase console)
+*/
 interface RankedUser extends User {
   score: number;
 }
@@ -61,7 +66,6 @@ export const fetchRankedUsers = async (
   limit: number = 10
 ): Promise<PaginatedRankedUsers> => {
   try {
-    // Make sure we're ordering by score in descending order
     let query = userCollection
       .orderBy("totalAverageWeightRatings", "desc")
       .orderBy("numberOfRents", "desc")
@@ -82,8 +86,6 @@ export const fetchRankedUsers = async (
         score: calculateUserScore(userData),
       });
     });
-
-    // Sort the results after fetching to ensure correct order
     users.sort((a, b) => b.score - a.score);
 
     return {
